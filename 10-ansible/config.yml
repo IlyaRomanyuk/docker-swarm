@@ -1,0 +1,25 @@
+---
+- name: Запуск nginx
+  hosts: demo
+  tasks:
+  
+    - name: Копирование html файла
+      ansible.builtin.copy:
+        src: ./index.html
+        dest: /home/ilya/10-ansible
+
+    - name: Копирование nginx.conf файла
+      ansible.builtin.copy:
+        src: ./default.conf
+        dest: /home/ilya/10-ansible
+
+    - name: Поднимаем контейнер nginx с кастомными файлами
+      community.docker.docker_container:
+        name: my_nginx_10_ansible
+        image: nginx
+        state: started
+        volumes:
+          - /home/ilya/10-ansible/index.html:/usr/share/nginx/html/index.html
+          - /home/ilya/10-ansible/default.conf:/etc/nginx/conf.d/default.conf
+        ports:
+          - "8081:80"
