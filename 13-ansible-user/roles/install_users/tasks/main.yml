@@ -1,0 +1,30 @@
+---
+- name: Создание пользователей
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | string | password_hash('sha512')}}"
+    state: present
+    groups: docker
+    append: true
+  loop: "{{ users }}"
+  become: true
+
+- name: Создание папок для пользователей
+  delegate_to: localhost
+  ansible.builtin.file:
+    path: "/tmp/{{ item.name }}"
+    state: directory
+  loop: "{{ users }}"
+
+- name: Создание ключей
+  delegate_to: localhost
+  community.crypto.openssh_keypair:
+    path: "/tmp/{{ item.name }}/id_ssh_rsa"
+  loop: "{{ users }}"
+
+- name: Добавляем публичный ключ на удаленный сервер
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ lookup('file', '/tmp/{{ item.name }}/id_ssh_rsa.pub') }}"
+  loop: "{{ users }}"
+  become: true
